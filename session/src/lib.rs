@@ -58,7 +58,9 @@ impl Session {
   ///
   /// # Errors
   ///
-  /// This function will return an error if `path` does not exist or isn't a directory.
+  /// This function will return an error if:
+  /// - an entry already exists with this name.
+  /// - the `self.current_directory` is invalid.
   pub fn create_directory<S: Into<OsString>>(&mut self, name: S) -> Result<()> {
     // TODO: better way to do this without a clone?
     let (path, entry) = self.resolve_mut(&self.current_directory.clone())?;
@@ -75,6 +77,21 @@ impl Session {
     };
 
     Ok(())
+  }
+
+  /// Returns the entries at the current working directory.
+  ///
+  /// # Errors
+  ///
+  /// This function will return an error if `path` does not exist or isn't a directory.
+  pub fn list_directory(&self) -> Result<impl Iterator<Item = &Entry>> {
+    let (path, entry) = self.resolve(&self.current_directory)?;
+
+    let BorrowedEntry::Directory(directory) = entry else {
+      return Err(Error::NotDirectory(path));
+    };
+
+    Ok(directory.entries.values())
   }
 
   /// Returns the absolute form of this path.

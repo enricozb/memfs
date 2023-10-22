@@ -42,8 +42,17 @@ impl Repl {
   fn handle_command(&mut self, command: Command) -> Result<()> {
     match command {
       Command::Cd { path } => self.session.change_directory(path)?,
-      Command::Ls => println!("not implemented"),
       Command::Mkdir { name } => self.session.create_directory(name)?,
+
+      Command::Ls => {
+        for entry in self.session.list_directory()? {
+          println!(
+            "{kind} {name:?}",
+            kind = if entry.is_directory() { "d" } else { "f" },
+            name = entry.name()
+          );
+        }
+      }
     }
 
     Ok(())
