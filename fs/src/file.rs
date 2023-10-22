@@ -2,7 +2,7 @@ use crate::metadata::Metadata;
 
 /// A file.
 pub struct File {
-  metadata: Metadata,
+  pub metadata: Metadata,
 
   content: Vec<u8>,
 }

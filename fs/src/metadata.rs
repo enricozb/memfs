@@ -3,7 +3,7 @@
 /// [`Directory`]: crate::directory::Directory
 /// [`File`]: crate::file::File
 pub struct Metadata {
-  name: String,
+  pub name: String,
 }
 
 impl Metadata {

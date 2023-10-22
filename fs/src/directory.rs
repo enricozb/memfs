@@ -1,10 +1,12 @@
-use crate::{file::File, metadata::Metadata};
+use std::{collections::HashMap, ffi::OsString};
+
+use crate::{metadata::Metadata, Entry};
 
 /// A directory.
 pub struct Directory {
-  metadata: Metadata,
+  pub metadata: Metadata,
 
-  entries: Vec<Entry>,
+  pub entries: HashMap<OsString, Entry>,
 }
 
 impl Directory {
@@ -13,7 +15,7 @@ impl Directory {
   pub fn new<S: Into<String>>(name: S) -> Self {
     Self {
       metadata: Metadata::new(name),
-      entries: Vec::new(),
+      entries: HashMap::new(),
     }
   }
 
@@ -22,10 +24,4 @@ impl Directory {
   pub fn root() -> Self {
     Self::new("/")
   }
-}
-
-/// An entry in a directory.
-pub enum Entry {
-  File(File),
-  Directory(Directory),
 }

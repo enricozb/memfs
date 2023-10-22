@@ -2,7 +2,7 @@ use crate::directory::Directory;
 
 /// A filesystem.
 pub struct Filesystem {
-  root: Directory,
+  pub root: Directory,
 }
 
 impl Filesystem {
