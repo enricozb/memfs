@@ -1,0 +1,71 @@
+use std::{io::Write, path::PathBuf};
+
+use clap::Parser;
+use fs::Filesystem;
+use session::{Result, Session};
+
+#[derive(Parser)]
+#[command(override_usage = "<COMMAND> [ARGS and OPTIONS]", no_binary_name = true, disable_help_flag = true)]
+enum Command {
+  /// Change directory.
+  Cd { path: PathBuf },
+
+  /// List directory entries.
+  Ls,
+
+  /// Create a new directory.
+  Mkdir { name: String },
+}
+
+struct Repl {
+  session: Session,
+}
+
+impl Repl {
+  pub fn new(filesystem: Filesystem) -> Self {
+    Self {
+      session: Session::new(filesystem),
+    }
+  }
+
+  fn get_line(&self) -> String {
+    // TODO: don't unwrap
+    print!("{current_directory:?} >>> ", current_directory = self.session.current_directory());
+    std::io::stdout().flush().unwrap();
+
+    let mut line = String::new();
+    std::io::stdin().read_line(&mut line).unwrap();
+
+    line
+  }
+
+  fn handle_command(&mut self, command: Command) -> Result<()> {
+    match command {
+      Command::Cd { path } => self.session.change_directory(path)?,
+      Command::Ls => println!("not implemented"),
+      Command::Mkdir { name } => self.session.create_directory(name)?,
+    }
+
+    Ok(())
+  }
+}
+
+fn main() {
+  let mut repl = Repl::new(Filesystem::new());
+
+  loop {
+    let line = repl.get_line();
+
+    let command = match Command::try_parse_from(line.trim().split(' ')) {
+      Ok(command) => command,
+      Err(err) => {
+        println!("{err}");
+        continue;
+      }
+    };
+
+    if let Err(err) = repl.handle_command(command) {
+      println!("{err}");
+    }
+  }
+}

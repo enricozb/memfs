@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{ffi::OsString, path::PathBuf};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -15,6 +15,9 @@ pub enum Error {
 
   #[error("{0:?} refers to an invalid parent")]
   NoParent(PathBuf),
+
+  #[error("{0:?} already exists")]
+  Exists(OsString),
 
   #[error("unsupported component {0}")]
   UnsupportedComponent(String),

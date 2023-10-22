@@ -1,14 +1,16 @@
+use std::ffi::OsString;
+
 /// Metadata about a [`Directory`] or [`File`].
 ///
 /// [`Directory`]: crate::directory::Directory
 /// [`File`]: crate::file::File
 pub struct Metadata {
-  pub name: String,
+  pub name: OsString,
 }
 
 impl Metadata {
   /// Creates a new metadata.
-  pub fn new<S: Into<String>>(name: S) -> Self {
+  pub fn new<S: Into<OsString>>(name: S) -> Self {
     Self { name: name.into() }
   }
 }

@@ -1,4 +1,4 @@
-use std::borrow::Borrow;
+use std::{borrow::Borrow, ffi::OsStr};
 
 use crate::{Directory, File};
 
@@ -17,7 +17,7 @@ where
   F: Borrow<File>,
   D: Borrow<Directory>,
 {
-  pub fn name(&self) -> &str {
+  pub fn name(&self) -> &OsStr {
     match self {
       Self::File(file) => &file.borrow().metadata.name,
       Self::Directory(directory) => &directory.borrow().metadata.name,
@@ -40,6 +40,18 @@ pub type Borrowed<'a> = Entry<&'a File, &'a Directory>;
 
 impl<'a> From<&'a Entry> for Borrowed<'a> {
   fn from(entry: &'a Entry) -> Self {
+    match entry {
+      Entry::Directory(directory) => Self::Directory(directory),
+      Entry::File(file) => Self::File(file),
+    }
+  }
+}
+
+/// An entry with mutably borrowed inner structures.
+pub type MutBorrowed<'a> = Entry<&'a mut File, &'a mut Directory>;
+
+impl<'a> From<&'a mut Entry> for MutBorrowed<'a> {
+  fn from(entry: &'a mut Entry) -> Self {
     match entry {
       Entry::Directory(directory) => Self::Directory(directory),
       Entry::File(file) => Self::File(file),
