@@ -84,13 +84,13 @@ impl Session {
     Ok(())
   }
 
-  /// Returns the entries at the current working directory.
+  /// Returns the entries of `path`.
   ///
   /// # Errors
   ///
   /// This function will return an error if `path` does not exist or isn't a directory.
-  pub fn list_directory(&self) -> Result<impl Iterator<Item = &Entry>> {
-    let (path, entry) = self.resolve(&self.current_directory)?;
+  pub fn list_directory<P: AsRef<Path>>(&self, path: P) -> Result<impl Iterator<Item = &Entry>> {
+    let (path, entry) = self.resolve(path)?;
 
     let BorrowedEntry::Directory(directory) = entry else {
       return Err(Error::NotDirectory(path));

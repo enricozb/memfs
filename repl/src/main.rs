@@ -11,7 +11,10 @@ enum Command {
   Cd { path: PathBuf },
 
   /// List directory entries.
-  Ls,
+  Ls {
+    #[clap(default_value = ".")]
+    path: PathBuf,
+  },
 
   /// Create a new directory.
   Mkdir { name: String },
@@ -47,8 +50,8 @@ impl Repl {
       Command::Cd { path } => self.session.change_directory(path)?,
       Command::Mkdir { name } => self.session.create_directory(name)?,
       Command::Rm { path } => self.session.remove(path)?,
-      Command::Ls => {
-        for entry in self.session.list_directory()? {
+      Command::Ls { path } => {
+        for entry in self.session.list_directory(path)? {
           println!(
             "{kind} {name:?}",
             kind = if entry.is_directory() { "d" } else { "f" },
