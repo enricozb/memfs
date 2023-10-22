@@ -13,12 +13,18 @@ pub enum Error {
   #[error("{0:?} is not absolute")]
   NotAbsolute(PathBuf),
 
-  #[error("{0:?} refers to an invalid parent")]
+  #[error("{0:?} has no parent")]
   NoParent(PathBuf),
+
+  #[error("{0:?} has no file name")]
+  NoFileName(PathBuf),
 
   #[error("{0:?} already exists")]
   Exists(OsString),
 
   #[error("unsupported component {0}")]
   UnsupportedComponent(String),
+
+  #[error("forbidden character {0:?}")]
+  ForbiddenCharacter(char),
 }

@@ -61,7 +61,13 @@ impl Session {
   /// This function will return an error if:
   /// - an entry already exists with this name.
   /// - the `self.current_directory` is invalid.
-  pub fn create_directory<S: Into<OsString>>(&mut self, name: S) -> Result<()> {
+  pub fn create_directory<S: Into<String>>(&mut self, name: S) -> Result<()> {
+    let name = name.into();
+
+    if name.contains(std::path::MAIN_SEPARATOR) {
+      return Err(Error::ForbiddenCharacter(std::path::MAIN_SEPARATOR));
+    }
+
     // TODO: better way to do this without a clone?
     let (path, entry) = self.resolve_mut(&self.current_directory.clone())?;
 
@@ -69,8 +75,7 @@ impl Session {
       return Err(Error::NotDirectory(path));
     };
 
-    let name = name.into();
-
+    let name: OsString = name.into();
     match directory.entries.entry(name.clone()) {
       BTreeMapEntry::Occupied(_) => return Err(Error::Exists(name)),
       BTreeMapEntry::Vacant(v) => v.insert(Entry::Directory(Directory::new(name))),
@@ -92,6 +97,36 @@ impl Session {
     };
 
     Ok(directory.entries.values())
+  }
+
+  /// Removes a directory or file.
+  ///
+  /// # Errors
+  ///
+  /// This function will return an error if:
+  /// - the path does not exist.
+  /// - the path does not have a parent (`/`).
+  pub fn remove<S: AsRef<Path>>(&mut self, path: S) -> Result<()> {
+    let path = self.canonicalize(path.as_ref())?;
+
+    let Some(parent) = path.parent() else {
+      return Err(Error::NoParent(path));
+    };
+
+    let (_, entry) = self.resolve_mut(parent)?;
+    let MutBorrowedEntry::Directory(directory) = entry else {
+      return Err(Error::NotDirectory(path));
+    };
+
+    let Some(name) = path.file_name() else {
+      return Err(Error::NoFileName(path));
+    };
+
+    if directory.entries.remove(name).is_none() {
+      return Err(Error::NotExist(name.into()));
+    }
+
+    Ok(())
   }
 
   /// Returns the absolute form of this path.
