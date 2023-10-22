@@ -1,0 +1,6 @@
+# nix-direnv
+.envrc
+.direnv
+
+# rust
+/target/
