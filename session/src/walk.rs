@@ -2,7 +2,7 @@
 ///
 /// See [`Session::walk`].
 ///
-/// [`Session::walk`]: crate::session::Session::walk
+/// [`Session::walk`]: crate::Session::walk
 pub enum Walk {
   Skip,
   Continue,
