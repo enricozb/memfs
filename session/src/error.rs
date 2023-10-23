@@ -24,7 +24,4 @@ pub enum Error {
 
   #[error("unsupported component {0}")]
   UnsupportedComponent(String),
-
-  #[error("forbidden character {0:?}")]
-  ForbiddenCharacter(char),
 }

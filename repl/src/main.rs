@@ -17,7 +17,7 @@ enum Command {
   },
 
   /// Create a new directory.
-  Mkdir { name: String },
+  Mkdir { path: PathBuf },
 
   /// Remove a directory or file.
   Rm { path: PathBuf },
@@ -48,7 +48,7 @@ impl Repl {
   fn handle_command(&mut self, command: Command) -> Result<()> {
     match command {
       Command::Cd { path } => self.session.change_directory(path)?,
-      Command::Mkdir { name } => self.session.create_directory(name)?,
+      Command::Mkdir { path } => self.session.create_directory(path)?,
       Command::Rm { path } => self.session.remove(path)?,
       Command::Ls { path } => {
         for entry in self.session.list_directory(path)? {

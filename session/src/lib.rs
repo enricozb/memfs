@@ -3,7 +3,6 @@ pub mod util;
 
 use std::{
   collections::btree_map::Entry as BTreeMapEntry,
-  ffi::OsString,
   path::{Component, Path, PathBuf},
 };
 
@@ -54,30 +53,31 @@ impl Session {
     Ok(())
   }
 
-  /// Creates a new directory at the current working directory.
+  /// Creates a new directory.
   ///
   /// # Errors
   ///
   /// This function will return an error if:
   /// - an entry already exists with this name.
-  /// - the `self.current_directory` is invalid.
-  pub fn create_directory<S: Into<String>>(&mut self, name: S) -> Result<()> {
-    let name = name.into();
+  /// - the parent of `path` does not exist or is not a directory.
+  pub fn create_directory<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+    let path = self.canonicalize(path.as_ref())?;
 
-    if name.contains(std::path::MAIN_SEPARATOR) {
-      return Err(Error::ForbiddenCharacter(std::path::MAIN_SEPARATOR));
-    }
+    let Some(parent) = path.parent() else {
+      return Err(Error::NoParent(path));
+    };
 
-    // TODO: better way to do this without a clone?
-    let (path, entry) = self.resolve_mut(&self.current_directory.clone())?;
-
+    let (_, entry) = self.resolve_mut(parent)?;
     let MutBorrowedEntry::Directory(directory) = entry else {
       return Err(Error::NotDirectory(path));
     };
 
-    let name: OsString = name.into();
-    match directory.entries.entry(name.clone()) {
-      BTreeMapEntry::Occupied(_) => return Err(Error::Exists(name)),
+    let Some(name) = path.file_name() else {
+      return Err(Error::NoFileName(path));
+    };
+
+    match directory.entries.entry(name.to_owned()) {
+      BTreeMapEntry::Occupied(_) => return Err(Error::Exists(name.to_owned())),
       BTreeMapEntry::Vacant(v) => v.insert(Entry::Directory(Directory::new(name))),
     };
 
