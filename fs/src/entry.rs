@@ -1,4 +1,7 @@
-use std::{borrow::Borrow, ffi::OsStr};
+use std::{
+  borrow::Borrow,
+  ffi::{OsStr, OsString},
+};
 
 use crate::{Directory, File};
 
@@ -32,6 +35,15 @@ where
   /// Returns whether this entry is the [`Self::File`] variant.
   pub fn is_file(&self) -> bool {
     matches!(&self, Self::File(_))
+  }
+}
+
+impl Entry<File, Directory> {
+  pub fn rename(&mut self, name: OsString) {
+    match self {
+      Self::File(file) => file.metadata.name = name,
+      Self::Directory(directory) => directory.metadata.name = name,
+    }
   }
 }
 

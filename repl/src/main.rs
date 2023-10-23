@@ -5,7 +5,11 @@ use fs::Filesystem;
 use session::{Result, Session};
 
 #[derive(Parser)]
-#[command(override_usage = "<COMMAND> [ARGS and OPTIONS]", no_binary_name = true, disable_help_flag = true)]
+#[command(
+  override_usage = "A in-memory filesystem repl. Use ctrl-c to exit.",
+  no_binary_name = true,
+  disable_help_flag = true
+)]
 enum Command {
   /// Change directory.
   Cd { path: PathBuf },
@@ -21,6 +25,10 @@ enum Command {
 
   /// Remove a directory or file.
   Rm { path: PathBuf },
+
+  /// Move a file or directory. The destination will be the source's new name,
+  /// as opposed to the source's new parent. This will overwrite the destination if one exists.
+  Mv { src: PathBuf, dst: PathBuf },
 }
 
 struct Repl {
@@ -50,6 +58,7 @@ impl Repl {
       Command::Cd { path } => self.session.change_directory(path)?,
       Command::Mkdir { path } => self.session.create_directory(path)?,
       Command::Rm { path } => self.session.remove(path)?,
+      Command::Mv { src, dst } => self.session.move_entry(src, dst)?,
       Command::Ls { path } => {
         for entry in self.session.list_directory(path)? {
           println!(
