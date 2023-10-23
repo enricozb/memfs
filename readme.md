@@ -1,5 +1,7 @@
 # In-Memory Filesystem
 
+Note: this is written in rust so you'll need `cargo` installed to test this.
+
 ## Overview
 This repo contains three crates:
 - `fs`: filesystem types with no facilities
@@ -8,6 +10,9 @@ This repo contains three crates:
 
 ## Documentation
 Run `cargo doc --open` while at the root of any one of the three crates to see their documentation.
+
+## Tests
+The tests are all in `session/tests`, and can be run from the top-level with `cargo test`.
 
 ## Repl
 
