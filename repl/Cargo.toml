@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.4.6", features = ["derive"] }
 fs = { version = "0.1.0", path = "../fs" }
+rand = "0.8.5"
 session = { version = "0.1.0", path = "../session" }

@@ -7,6 +7,9 @@ pub enum Error {
   #[error("{0:?} is not a directory")]
   NotDirectory(PathBuf),
 
+  #[error("{0:?} is not a file")]
+  NotFile(PathBuf),
+
   #[error("{0:?} does not exist")]
   NotExist(PathBuf),
 

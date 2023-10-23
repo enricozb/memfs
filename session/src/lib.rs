@@ -9,7 +9,7 @@ use std::{
 
 use fs::{
   entry::{Borrowed as BorrowedEntry, MutBorrowed as MutBorrowedEntry},
-  Directory, Entry, Filesystem,
+  Directory, Entry, File, Filesystem,
 };
 
 pub use self::error::{Error, Result};
@@ -59,7 +59,7 @@ impl Session {
   /// # Errors
   ///
   /// This function will return an error if:
-  /// - an entry already exists with this name and its file name.
+  /// - an entry already exists with this name.
   /// - the parent of `path` does not exist or is not a directory.
   pub fn create_directory<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
     let (directory, name) = self.resolve_mut_directory_file_name(path)?;
@@ -67,6 +67,24 @@ impl Session {
     match directory.entries.entry(name.clone()) {
       BTreeMapEntry::Occupied(_) => return Err(Error::Exists(name.clone())),
       BTreeMapEntry::Vacant(v) => v.insert(Entry::Directory(Directory::new(name))),
+    };
+
+    Ok(())
+  }
+
+  /// Creates a new file.
+  ///
+  /// # Errors
+  ///
+  /// This function will return an error if:
+  /// - an entry already exists with this name.
+  /// - the parent of `path` does not exist or is not a directory.
+  pub fn create_file<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+    let (directory, name) = self.resolve_mut_directory_file_name(path)?;
+
+    match directory.entries.entry(name.clone()) {
+      BTreeMapEntry::Occupied(_) => return Err(Error::Exists(name.clone())),
+      BTreeMapEntry::Vacant(v) => v.insert(Entry::File(File::new(name))),
     };
 
     Ok(())
@@ -140,7 +158,66 @@ impl Session {
     Ok(())
   }
 
+  /// Calls a function `f` on every descendant of `root`.
+  ///
+  /// # Errors
+  ///
+  /// This function will return an error if `root` does not exist.
+  pub fn walk<P: AsRef<Path>, F>(&self, root: P, f: F) -> Result<()>
+  where
+    F: Fn(&Path, &BorrowedEntry),
+  {
+    let (root, entry) = self.resolve(root)?;
+    let mut stack = vec![(root, entry)];
+
+    while let Some((path, entry)) = stack.pop() {
+      f(&path, &entry);
+
+      if let BorrowedEntry::Directory(directory) = entry {
+        for (name, entry) in directory.entries.iter().rev() {
+          stack.push((path.join(name), entry.into()));
+        }
+      }
+    }
+
+    Ok(())
+  }
+
+  /// Appends `content` to a file at `path.
+  ///
+  /// # Errors
+  ///
+  /// This function will return an error if `path` does not exist or is not a file.
+  pub fn write_file<P: AsRef<Path>>(&mut self, path: P, content: Vec<u8>) -> Result<()> {
+    let (path, entry) = self.resolve_mut(path)?;
+    let MutBorrowedEntry::File(file) = entry else {
+      return Err(Error::NotFile(path));
+    };
+
+    file.content.extend(content);
+
+    Ok(())
+  }
+
+  /// Returns a file's content as a string.
+  ///
+  /// # Errors
+  ///
+  /// This function will return an error if `path` does not exist or is not a file.
+  pub fn read_file<P: AsRef<Path>>(&self, path: P) -> Result<String> {
+    let (path, entry) = self.resolve(path)?;
+    let BorrowedEntry::File(file) = entry else {
+      return Err(Error::NotFile(path));
+    };
+
+    Ok(String::from_utf8_lossy(&file.content).into_owned())
+  }
+
   /// Returns the absolute form of this path.
+  ///
+  /// # Errors
+  ///
+  /// This function will return an error if cleaning the path fails.
   fn canonicalize<P: AsRef<Path>>(&self, path: P) -> Result<PathBuf> {
     let path = path.as_ref();
 
@@ -153,7 +230,7 @@ impl Session {
     crate::util::clean_path(path)
   }
 
-  /// Resolves a path to an [`Entry`].
+  /// Resolves a path to its canonical path and its [`Entry`].
   ///
   /// This is linear in the number of components in the canonicalized `path`.
   ///
@@ -184,7 +261,7 @@ impl Session {
     Ok((path, parent))
   }
 
-  /// Resolves a path to a mutable [`Entry`].
+  /// Resolves a path to its canonical path and a mutable reference to its [`Entry`].
   ///
   /// This is linear in the number of components in the canonicalized `path`.
   ///

@@ -1,3 +1,5 @@
+mod util;
+
 use std::{io::Write, path::PathBuf};
 
 use clap::Parser;
@@ -23,12 +25,27 @@ enum Command {
   /// Create a new directory.
   Mkdir { path: PathBuf },
 
+  /// Creates an empty file.
+  Touch { path: PathBuf },
+
+  /// Fills a file with random data.
+  Fill { path: PathBuf },
+
+  /// Prints a file's content.
+  Cat { path: PathBuf },
+
   /// Remove a directory or file.
   Rm { path: PathBuf },
 
   /// Move a file or directory. The destination will be the source's new name,
   /// as opposed to the source's new parent. This will overwrite the destination if one exists.
   Mv { src: PathBuf, dst: PathBuf },
+
+  /// List contents of directories in a tree-like format.
+  Tree {
+    #[clap(default_value = ".")]
+    path: PathBuf,
+  },
 }
 
 struct Repl {
@@ -57,8 +74,22 @@ impl Repl {
     match command {
       Command::Cd { path } => self.session.change_directory(path)?,
       Command::Mkdir { path } => self.session.create_directory(path)?,
+      Command::Touch { path } => self.session.create_file(path)?,
+      Command::Fill { path } => self.session.write_file(path, crate::util::random_ascii(100))?,
+      Command::Cat { path } => println!("{}", self.session.read_file(path)?),
       Command::Rm { path } => self.session.remove(path)?,
       Command::Mv { src, dst } => self.session.move_entry(src, dst)?,
+
+      Command::Tree { path } => {
+        let root_depth = path.components().count();
+
+        self.session.walk(path, |path, entry| {
+          let depth = "  ".repeat(path.components().count() - root_depth);
+
+          println!("{depth}· {name:?}", name = entry.name());
+        })?;
+      }
+
       Command::Ls { path } => {
         for entry in self.session.list_directory(path)? {
           println!(
