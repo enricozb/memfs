@@ -90,7 +90,7 @@ impl Repl {
         let target_name = OsString::from(target_name);
 
         self.session.walk(self.session.current_directory(), |path, entry| {
-          if entry.name() == &target_name {
+          if entry.name() == target_name {
             println!("{path:?}");
           }
         })?;
@@ -106,7 +106,7 @@ impl Repl {
           name = entry.name(),
         );
 
-        println!("Created At: {}", metadata.created_at)
+        println!("Created At: {}", metadata.created_at);
       }
 
       Command::Tree { path } => {
