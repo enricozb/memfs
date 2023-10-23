@@ -3,7 +3,7 @@ use std::{
   ffi::{OsStr, OsString},
 };
 
-use crate::{Directory, File};
+use crate::{metadata::Metadata, Directory, File};
 
 /// An entry in a directory.
 pub enum Entry<F = File, D = Directory>
@@ -24,6 +24,13 @@ where
     match self {
       Self::File(file) => &file.borrow().metadata.name,
       Self::Directory(directory) => &directory.borrow().metadata.name,
+    }
+  }
+
+  pub fn metadata(&self) -> &Metadata {
+    match self {
+      Self::File(file) => &file.borrow().metadata,
+      Self::Directory(directory) => &directory.borrow().metadata,
     }
   }
 

@@ -1,6 +1,6 @@
 mod util;
 
-use std::{io::Write, path::PathBuf};
+use std::{ffi::OsString, io::Write, path::PathBuf};
 
 use clap::Parser;
 use fs::Filesystem;
@@ -13,6 +13,9 @@ use session::{Result, Session};
   disable_help_flag = true
 )]
 enum Command {
+  /// Display file or directory metadata.
+  Stat { path: PathBuf },
+
   /// Change directory.
   Cd { path: PathBuf },
 
@@ -46,6 +49,9 @@ enum Command {
     #[clap(default_value = ".")]
     path: PathBuf,
   },
+
+  /// List all file paths under the current directory with the given name.
+  Find { target_name: String },
 }
 
 struct Repl {
@@ -79,6 +85,29 @@ impl Repl {
       Command::Cat { path } => println!("{}", self.session.read_file(path)?),
       Command::Rm { path } => self.session.remove(path)?,
       Command::Mv { src, dst } => self.session.move_entry(src, dst)?,
+
+      Command::Find { target_name } => {
+        let target_name = OsString::from(target_name);
+
+        self.session.walk(self.session.current_directory(), |path, entry| {
+          if entry.name() == &target_name {
+            println!("{path:?}");
+          }
+        })?;
+      }
+
+      Command::Stat { path } => {
+        let (_, entry) = self.session.resolve(path)?;
+        let metadata = entry.metadata();
+
+        println!(
+          "{kind}: {name:?}",
+          kind = if entry.is_directory() { "Directory" } else { "File" },
+          name = entry.name(),
+        );
+
+        println!("Created At: {}", metadata.created_at)
+      }
 
       Command::Tree { path } => {
         let root_depth = path.components().count();

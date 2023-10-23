@@ -1,5 +1,6 @@
 pub mod error;
 pub mod util;
+pub mod walk;
 
 use std::{
   collections::btree_map::Entry as BTreeMapEntry,
@@ -13,6 +14,7 @@ use fs::{
 };
 
 pub use self::error::{Error, Result};
+use self::walk::Walk;
 
 /// An interactive session with a [`Filesystem`].
 pub struct Session {
@@ -159,19 +161,24 @@ impl Session {
   }
 
   /// Calls a function `f` on every descendant of `root`.
+  /// - If `f` returns `false` on a directory entry then it will not be entered.
+  /// - The return value of `f` is ignored for file entries.
   ///
   /// # Errors
   ///
   /// This function will return an error if `root` does not exist.
-  pub fn walk<P: AsRef<Path>, F>(&self, root: P, f: F) -> Result<()>
+  pub fn walk<P: AsRef<Path>, F, S>(&self, root: P, f: F) -> Result<()>
   where
-    F: Fn(&Path, &BorrowedEntry),
+    S: Into<Walk>,
+    F: Fn(&Path, &BorrowedEntry) -> S,
   {
     let (root, entry) = self.resolve(root)?;
     let mut stack = vec![(root, entry)];
 
     while let Some((path, entry)) = stack.pop() {
-      f(&path, &entry);
+      if let Walk::Skip = f(&path, &entry).into() {
+        continue;
+      }
 
       if let BorrowedEntry::Directory(directory) = entry {
         for (name, entry) in directory.entries.iter().rev() {
@@ -237,7 +244,7 @@ impl Session {
   /// # Errors
   ///
   /// This function will return an error if any component of `path` does not exist.
-  fn resolve<P: AsRef<Path>>(&self, path: P) -> Result<(PathBuf, BorrowedEntry)> {
+  pub fn resolve<P: AsRef<Path>>(&self, path: P) -> Result<(PathBuf, BorrowedEntry)> {
     let path = self.canonicalize(path)?;
 
     let mut parent = BorrowedEntry::Directory(&self.filesystem.root);
