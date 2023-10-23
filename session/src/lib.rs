@@ -183,7 +183,7 @@ impl Session {
     Ok(())
   }
 
-  /// Appends `content` to a file at `path.
+  /// Appends `content` to a file at `path`.
   ///
   /// # Errors
   ///
