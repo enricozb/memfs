@@ -125,7 +125,7 @@ impl Session {
     Ok(())
   }
 
-  /// Moves a directory or file to a new location.
+  /// Moves a directory or file to a new location, replacing the destination if it exists.
   ///
   /// # Errors
   ///
